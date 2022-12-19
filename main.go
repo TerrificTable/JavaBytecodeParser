@@ -26,14 +26,31 @@ const (
 	CONSTANT_MethodHandle		= 15
 	CONSTANT_MethodType			= 16
 	CONSTANT_InvokeDynamic		= 18
+
+	ACC_PUBLIC 		 = 0x0001
+	ACC_FINAL 		 = 0x0010
+	ACC_SUPER 		 = 0x0020
+	ACC_INTERFACE   = 0x0200
+	ACC_ABSTRACT   = 0x0400
+	ACC_SYNTHETIC  = 0x1000
+	ACC_ANNOTATION = 0x2000
+	ACC_ENUM 	 = 0x4000
 )
 
+var AccesFlags = map[string]int{}
+
+
+type AccessFlag struct {
+	Num  int
+	Names []string
+}
 
 type Class struct {
 	Magic        string
 	Minor        int
 	Major        int
 	ConstantPool []ConstantPool
+	AccessFlags  AccessFlag
 }
 
 type ConstantPool struct {
@@ -108,11 +125,23 @@ func readu4s(file *os.File) string {
 
 
 
+func _init() {
+	AccesFlags["ACC_PUBLIC"] 	 = 0x0001
+	AccesFlags["ACC_FINAL"] 	 = 0x0010
+	AccesFlags["ACC_SUPER"] 	 = 0x0020
+	AccesFlags["ACC_INTERFACE"]  = 0x0200
+	AccesFlags["ACC_ABSTRACT"]   = 0x0400
+	AccesFlags["ACC_SYNTHETIC"]  = 0x1000
+	AccesFlags["ACC_ANNOTATION"] = 0x2000
+	AccesFlags["ACC_ENUM"] 	 	 = 0x4000
+}
+
 
 
 func main() {
 	start := time.Now()
 
+	_init()
 	fmt.Println(" [ Start ] ")
 
 	file, err := os.Open("Main.class")
@@ -129,9 +158,10 @@ func main() {
 	class, err := ParseBytecode(file)
 	if err != nil { fmt.Println(err) }
 
-	classJson, err := json.MarshalIndent(class, "", "  ")
+	_, err = json.MarshalIndent(class, "", "  ")
 	if err != nil { fmt.Println(err); return }
-	fmt.Printf("ConstantPool = %s\n", string(classJson))
+	// fmt.Printf("ConstantPool = %s\n", string(classJson))
+
 
 	fmt.Println()
 	fmt.Println("---------------")
@@ -143,6 +173,19 @@ func main() {
 		}
 	}
 
+}
+
+func parseAccessFlag(flags int) AccessFlag {
+	var result []string
+	for key, val := range AccesFlags {
+		if (flags & val) != 0 {
+			result = append(result, key)
+		}
+	}
+	return AccessFlag{
+		Num: flags,
+		Names: result,
+	}
 }
 
 
@@ -201,6 +244,11 @@ func ParseBytecode(file *os.File) (Class, error) {
 	}
 
 	class.ConstantPool = constantPool
+
+
+	class.AccessFlags = parseAccessFlag(readu2i(file))
+	fmt.Println("access flags = ", class.AccessFlags)
+
 
 	return class, nil
 }
