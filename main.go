@@ -51,6 +51,8 @@ type Class struct {
 	Major        int
 	ConstantPool []ConstantPool
 	AccessFlags  AccessFlag
+	ThisClass    int
+	SuperClass   int
 }
 
 type ConstantPool struct {
@@ -247,8 +249,8 @@ func ParseBytecode(file *os.File) (Class, error) {
 
 
 	class.AccessFlags = parseAccessFlag(readu2i(file))
-	fmt.Println("access flags = ", class.AccessFlags)
-
+	class.ThisClass = readu2i(file)
+	class.SuperClass = readu2i(file)
 
 	return class, nil
 }
